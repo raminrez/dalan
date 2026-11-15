@@ -50,9 +50,8 @@ This document specifies the ongoing architectural roadmap and tracer-bullet tick
   4. Landing sections (Hero/Darvazeh, Pipeline/Hashti, Results/Hayati, FAQ/Architecture) composed strictly using native Hashti components (`Card`, `Button`, `Badge`, `Switch`, `Dropzone`, `ProgressBar`).
   5. Zero custom CSS overrides that break Hashti design token encapsulation.
 
-### Ticket DLN-007: PDF Outlines & Semantic Chapter TOC Detection
-* **File:** `docs/issues/DLN-007-pdf-outlines-toc.md`
-* **Status:** Blocked by DLN-006
+* **[x] DLN-007: PDF Outlines & Semantic Chapter TOC Detection** (`docs/issues/DLN-007-pdf-outlines-toc.md`)
+  - Outline bookmarks parsing (`getOutline`), destination page mapping, fallback heading detection (فصل, بخش, گفتار, Chapter), and Kindle-compatible dual-TOC (`nav.xhtml` & `toc.ncx`).
 * **Goal:** Extract native PDF bookmarks (`doc.getOutline()`) and regex-detect Persian/English chapter titles (`فصل ۱`, `بخش دوم`, `Chapter 1`) to construct native Kindle Table of Contents (`nav.xhtml` & `toc.ncx`).
 * **Acceptance Criteria:**
   1. Worker queries PDF outline tree and maps named destinations to EPUB spine chapters.

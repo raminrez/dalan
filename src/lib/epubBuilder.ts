@@ -69,6 +69,7 @@ p {
   const manifestItems: string[] = [
     `<item id="css" href="styles/style.css" media-type="text/css"/>`,
     `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>`,
+    `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>`,
   ];
   if (fontBuffer) {
     manifestItems.push(
@@ -77,14 +78,22 @@ p {
   }
   const spineItems: string[] = [];
   const navLinks: string[] = [];
+  const ncxNavPoints: string[] = [];
 
   chapters.forEach((ch, idx) => {
-    const id = `chap_${String(idx + 1).padStart(3, "0")}`;
+    const playOrder = idx + 1;
+    const id = `chap_${String(playOrder).padStart(3, "0")}`;
     const filename = `text/${id}.xhtml`;
 
     manifestItems.push(`<item id="${id}" href="${filename}" media-type="application/xhtml+xml"/>`);
     spineItems.push(`<itemref idref="${id}"/>`);
-    navLinks.push(`<li><a href="${filename}">${ch.title}</a></li>`);
+    navLinks.push(`<li><a href="${filename}">${escapeXml(ch.title)}</a></li>`);
+    ncxNavPoints.push(`    <navPoint id="navPoint-${playOrder}" playOrder="${playOrder}">
+      <navLabel>
+        <text>${escapeXml(ch.title)}</text>
+      </navLabel>
+      <content src="${filename}"/>
+    </navPoint>`);
 
     const paragraphs = ch.content
       .split(/\n\s*\n/)
@@ -111,7 +120,7 @@ p {
     zip.file(`OEBPS/${filename}`, xhtml);
   });
 
-  // 6. Navigation (nav.xhtml)
+  // 6. Navigation (nav.xhtml) - EPUB 3
   const navXhtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="${meta.language || "fa"}" dir="rtl">
@@ -131,8 +140,29 @@ p {
 </html>`;
   zip.file("OEBPS/nav.xhtml", navXhtml);
 
-  // 7. OPF Manifest (content.opf)
+  // 7. Navigation Control XML (toc.ncx) - EPUB 2 / Kindle backward compatibility
   const bookId = `urn:uuid:${Math.random().toString(36).substring(2, 15)}`;
+  const ncx = `<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="${meta.language || "fa"}" dir="rtl">
+  <head>
+    <meta name="dtb:uid" content="${bookId}"/>
+    <meta name="dtb:depth" content="1"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>${escapeXml(meta.title)}</text>
+  </docTitle>
+  <docAuthor>
+    <text>${escapeXml(meta.author || "Unknown")}</text>
+  </docAuthor>
+  <navMap>
+${ncxNavPoints.join("\n")}
+  </navMap>
+</ncx>`;
+  zip.file("OEBPS/toc.ncx", ncx);
+
+  // 8. OPF Manifest (content.opf)
   const opf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookID" page-progression-direction="rtl">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -144,7 +174,7 @@ p {
   <manifest>
     ${manifestItems.join("\n    ")}
   </manifest>
-  <spine page-progression-direction="rtl">
+  <spine toc="ncx" page-progression-direction="rtl">
     ${spineItems.join("\n    ")}
   </spine>
 </package>`;

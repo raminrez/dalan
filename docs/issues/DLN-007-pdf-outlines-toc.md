@@ -1,7 +1,7 @@
 # Issue DLN-007: PDF Outlines & Semantic Chapter TOC Detection
 
 * **Parent Spec:** `docs/SPEC.md`
-* **Status:** Blocked by DLN-006
+* **Status:** Done
 * **Blocks:** DLN-008
 
 ## Problem Statement
@@ -13,6 +13,6 @@ Currently, long books without explicit page breaks are split into arbitrary 10-p
 3. Build nested EPUB navigation documents (`nav.xhtml` for EPUB 3, `toc.ncx` for EPUB 2/Kindle backward compatibility).
 
 ## Acceptance Criteria
-- [ ] Books with PDF outlines generate a 1:1 navigable Table of Contents on Kindle.
-- [ ] Fallback heading detection splits chapters cleanly at section titles.
-- [ ] Chapter titles appear correctly in the reader menu.
+- [x] Books with PDF outlines generate a 1:1 navigable Table of Contents on Kindle.
+- [x] Fallback heading detection splits chapters cleanly at section titles.
+- [x] Chapter titles appear correctly in the reader menu.
