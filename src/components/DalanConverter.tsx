@@ -4,7 +4,6 @@ import {
   Card,
   CardHeader,
   CardBody,
-  CardFooter,
   Button,
   Badge,
   Switch,
@@ -14,10 +13,14 @@ import {
   TextField,
   NativeSelect,
   Icon,
+  ActionableNotification,
 } from "@hashti/react";
 
 type Locale = "fa" | "en";
 type ThemeMode = "relay-dark" | "relay-light";
+
+export const APP_VERSION = "v0.1.0-alpha";
+export const WASM_CORE_VERSION = "WASM Core v1.2";
 
 interface Translations {
   appTitle: string;
@@ -26,6 +29,11 @@ interface Translations {
   heroSubtitle: string;
   themeDark: string;
   themeLight: string;
+  navPrivacy: string;
+  navFeatures: string;
+  navEngine: string;
+  navGithub: string;
+  navIssues: string;
   dropPrompt: string;
   dropPromptActive: string;
   dropHint: string;
@@ -63,147 +71,318 @@ interface Translations {
   metaModeUsed: string;
   errorTitle: string;
   retryBtn: string;
-  archHeading: string;
-  archSubheading: string;
-  darvazehCardTitle: string;
-  darvazehCardDesc: string;
-  hashtiCardTitle: string;
-  hashtiCardDesc: string;
-  dalanCardTitle: string;
-  dalanCardDesc: string;
-  hayatiCardTitle: string;
-  hayatiCardDesc: string;
-  footerText: string;
+
+  // Privacy Section
+  privacyTitle: string;
+  privacySubtitle: string;
+  privacyBadge: string;
+  privacyStatement: string;
+  privacyArchHeading: string;
+  privacyArchItems: { title: string; desc: string }[];
+  privacyVerifyHeading: string;
+  privacyVerifySteps: string[];
+
+  // Features Grid
+  featuresTitle: string;
+  featuresSubtitle: string;
+  featureCards: { id: string; title: string; desc: string; badge: string; icon: string }[];
+
+  // Engine & Cache
+  engineTitle: string;
+  engineSubtitle: string;
+  activeAppVersion: string;
+  activeWasmVersion: string;
+  cacheStatusLabel: string;
+  cacheStatusReady: string;
+  purgeBtn: string;
+  purgingText: string;
+  purgeSuccessTitle: string;
+  purgeSuccessDesc: string;
+  reloadBtn: string;
+  updateAvailableTitle: string;
+  updateAvailableDesc: string;
+  updateNowBtn: string;
+
+  // Footer
+  footerLicense: string;
+  footerDesignCredit: string;
+  footerOpenSourceNote: string;
 }
 
 const strings: Record<Locale, Translations> = {
   fa: {
     appTitle: "دالان • Dalan",
-    badgeSpatial: "هندسه فضایی هشتی • نسخه کلاینت‌ساید",
-    heroTitle: "گذرگاه امن تبدیل PDF به کتاب‌خوان کیندل",
+    badgeSpatial: "متن‌باز • بدون سرور",
+    heroTitle: "تبدیل محلی PDF به کتاب‌خوان کیندل",
     heroSubtitle:
-      "تبدیل مستقیم اسناد و کتاب‌های پی‌دی‌اف به قالب استاندارد EPUB 3 بدون ارسال هیچ بایتی به سرور؛ همراه با فونت درون‌ساخت وزیرمتن و چیدمان کاملاً راست‌چین و خوانا.",
+      "تبدیل مستقیم اسناد PDF به قالب استاندارد EPUB 3 بدون ارسال حتی یک بایت داده به شبکه؛ همراه با فونت درون‌ساخت وزیرمتن و چیدمان راست‌چین خوانا.",
     themeDark: "حالت تاریک",
     themeLight: "حالت روشن",
+    navPrivacy: "تضمین حریم خصوصی",
+    navFeatures: "قابلیت‌ها",
+    navEngine: "موتور پردازش",
+    navGithub: "مخزن گیت‌هاب",
+    navIssues: "گزارش باگ",
     dropPrompt: "فایل PDF را به این بخش بکشید یا برای انتخاب کلیک کنید",
     dropPromptActive: "سند PDF خود را رها کنید...",
-    dropHint: "حداکثر امنیت و حریم خصوصی؛ پردازش کامل توسط WebAssembly در مرورگر شما",
+    dropHint: "پردازش کامل در مرورگر بدون ارسال داده به سرور با WebAssembly",
     browseBtn: "انتخاب فایل PDF",
     selectedFile: "سند انتخاب‌شده",
     removeFile: "تغییر فایل",
     metaHeading: "تنظیمات و متاداده سند",
-    metaDesc: "اطلاعات کتاب و حالت پردازش متن را بررسی کنید",
+    metaDesc: "اطلاعات کتاب و حالت پردازش متن را مشخص کنید",
     bookTitleLabel: "عنوان کتاب",
-    bookTitlePlaceholder: "مثلاً: دیوان حافظ یا تاریخ ایران",
+    bookTitlePlaceholder: "مثلاً: دیوان حافظ یا تاریخ بیهقی",
     authorLabel: "نویسنده یا مترجم",
-    authorPlaceholder: "مثلاً: احمد کسروی",
+    authorPlaceholder: "مثلاً: ابوالفضل بیهقی",
     modeLabel: "روش استخراج متن",
-    modeAuto: "تشخیص هوشمند (متن دیجیتال یا تصویر)",
+    modeAuto: "تشخیص هوشمند (متن مستقیم یا OCR تصویری)",
     modeOcr: "پردازش کامل تصویری (OCR - مناسب اسکن‌ها)",
     langLabel: "زبان محتوا",
     langFaAr: "فارسی و عربی (fas + ara)",
     langFaOnly: "فارسی خالص (fas)",
     langEnOnly: "انگلیسی (eng)",
     startBtn: "شروع تبدیل به EPUB",
-    processingTitle: "در حال پردازش سند در تالار هشتی",
-    processingBadge: "پردازش در جریان",
+    processingTitle: "در حال پردازش محلی سند",
+    processingBadge: "پردازش در وب‌ورکر",
     previewAlt: "پیش‌نمایش زنده صفحه پردازش‌شده",
     pageTelemetry: (c, t) => `صفحه ${c} از ${t}`,
-    progressLabel: "پیشرفت پردازش",
-    successTitle: "سند با موفقیت به حیاط خلوت (حیاتی) رسید!",
+    progressLabel: "پیشرفت تبدیل",
+    successTitle: "تبدیل فایل با موفقیت پایان یافت",
     successDesc:
-      "کتاب شما با استانداردهای EPUB 3، قلم بهینه‌شده وزیرمتن، چیدمان بهینه دوطرفه و فهرست مطالب بازسازی شد.",
-    downloadBtn: "دانلود کتاب الکترونیکی EPUB",
-    convertAnotherBtn: "تبدیل سندی دیگر",
-    kindleGuideTitle: "راهنمای همگام‌سازی با کیندل (Kindle)",
+      "کتاب شما با ساختار استاندارد EPUB 3، فونت وزیرمتن و برچسب‌های جهت متن (RTL/LTR) آماده دریافت است.",
+    downloadBtn: "دانلود فایل EPUB",
+    convertAnotherBtn: "تبدیل سند دیگر",
+    kindleGuideTitle: "انتقال به دستگاه کیندل (Kindle)",
     kindleGuideDesc:
-      "فایل دانلود شده را در سرویس رسمی آمازون آپلود کرده یا به نشانی ایمیل کیندل خود بفرستید:",
-    kindleLinkText: "سرویس Amazon Send to Kindle",
-    metaSummaryLabel: "خلاصه مشخصات فایل تولیدی:",
+      "فایل دانلودشده را در وبگاه رسمی آمازون بارگذاری کنید یا به نشانی اختصاصی کیندل بفرستید:",
+    kindleLinkText: "سرویس Send to Kindle آمازون",
+    metaSummaryLabel: "مشخصات فایل نهایی:",
     metaPages: (c) => `${c} صفحه پردازش‌شده`,
-    metaModeUsed: "پردازش امن کلاینت‌ساید",
-    errorTitle: "خطایی در حین پردازش رخ داد",
-    retryBtn: "بازگشت و تلاش دوباره",
-    archHeading: "معماری فضایی دالان و ۴ آستانه گذار",
-    archSubheading: "بازآفرینی مفاهیم کهن معماری ایرانی در ساختار امن پردازش دیجیتال",
-    darvazehCardTitle: "۱. دروازه (Darvazeh)",
-    darvazehCardDesc:
-      "آستانه ورود سند به مرورگر؛ رمزنگاری درجا و تضمین عدم خروج حتی یک بایت داده به سرور خارجی.",
-    hashtiCardTitle: "۲. هشتی (Hashti)",
-    hashtiCardDesc:
-      "مفصل تقسیم و تصمیم‌گیری هوشمند برای تفکیک جریان‌های OCR از جریان‌های متن مستقیم و فیلتر صفحات.",
-    dalanCardTitle: "۳. دالان (Dalan)",
-    dalanCardDesc:
-      "دالان باریک و صبور گذر؛ خط لوله وب‌ورکرها، رندرهای تصویری بوم و استخراج ساختار کلمات با موتور WASM.",
-    hayatiCardTitle: "۴. حیاتی (Hayati)",
-    hayatiCardDesc:
-      "حیاط باطراوت آرامش نهایی؛ تولید پکیج فشرده EPUB 3 همراه با فونت زیبای وزیرمتن و تحویل بی‌واسطه به کاربر.",
-    footerText:
-      "دالان (Dalan) • پیاده‌سازی مبتنی بر مؤلفه‌های اصیل Hashti Design System و پردازشگر اختصاصی PDF2EPUB.",
+    metaModeUsed: "پردازش محلی با WebAssembly",
+    errorTitle: "خطایی در پردازش رخ داد",
+    retryBtn: "تلاش دوباره",
+
+    // Privacy Section
+    privacyTitle: "تضمین فنی حریم خصوصی و عدم نشت داده",
+    privacySubtitle: "تمامی مراحل پردازش متن، استخراج تصویر و ساخت فایل داخل مرورگر کاربر انجام می‌شود",
+    privacyBadge: "۰ بایت ارسال شبکه",
+    privacyStatement:
+      "دالان هیچ داده، سند، متاداده، یا کوکی‌ای را به هیچ سروری ارسال نمی‌کند. تمام عملیات با استفاده از WebAssembly و داخل محیط ایزوله Web Worker اجرا می‌شود.",
+    privacyArchHeading: "معماری پردازش امن محلی",
+    privacyArchItems: [
+      {
+        title: "اجرای ایزوله در Web Workers",
+        desc: "پارس PDF با pdf.js و موتور OCR تسراکت درون وب‌ورکرهای پس‌زمینه مرورگر اجرا می‌شوند و به شبکه خارجی دسترسی ندارند.",
+      },
+      {
+        title: "ساخت محلی بسته EPUB 3",
+        desc: "فایل نهایی EPUB و جاسازی قلم وزیرمتن توسط کتابخانه JSZip مستقیماً در حافظه رم دستگاه کاربر فشرده و تولید می‌شود.",
+      },
+      {
+        title: "عملکرد کامل آفلاین با PWA",
+        desc: "پس از بارگذاری اولیه صفحه، کل سامانه بدون نیاز به اتصال اینترنت و در حالت کاملاً آفلاین کار می‌کند.",
+      },
+    ],
+    privacyVerifyHeading: "نحوه راستی‌آزمایی در DevTools مرورگر",
+    privacyVerifySteps: [
+      "کلید F12 را بزنید تا ابزارهای توسعه مرورگر (DevTools) باز شود.",
+      "به زبانه Network بروید و گزینه All را انتخاب کنید.",
+      "یک فایل PDF را برای تبدیل انتخاب کرده و دکمه شروع تبدیل را بزنید.",
+      "بررسی کنید: در طول تمام فرایند تبدیل، حتی یک درخواست HTTP یا WebSocket ارسال نمی‌شود (0 requests).",
+    ],
+
+    // Features Grid
+    featuresTitle: "قابلیت‌های کلیدی دالان",
+    featuresSubtitle: "ابزار متن‌باز تبدیل کتاب با تمرکز بر خط فارسی و دستگاه‌های کتاب‌خوان کیندل",
+    featureCards: [
+      {
+        id: "kindle-reflow",
+        title: "بازچینش متن کیندل با فونت وزیرمتن",
+        desc: "تولید فایل سازگار با موتور EPUB 3 کیندل با جاسازی کامل فونت فارسی Vazirmatn، جهت‌بندی صحیح خطوط و شکست خط استاندارد.",
+        badge: "EPUB 3",
+        icon: "file",
+      },
+      {
+        id: "orthography",
+        title: "یکپارچه‌سازی نیم‌فاصله و نویسه‌های فارسی",
+        desc: "پالایش نویسه‌ها، تبدیل ارقام و ی/ک عربی، و تصحیح نیم‌فاصله‌های ZWNJ مطابق استانداردهای دبیره پاک‌نویس و دوات.",
+        badge: "ZWNJ",
+        icon: "sparkle",
+      },
+      {
+        id: "ocr-wasm",
+        title: "موتور OCR کلاینت‌ساید با Tesseract WASM",
+        desc: "تشخیص نویسه‌های اسناد اسکن‌شده به زبان‌های فارسی، عربی و انگلیسی به کمک وب‌اسمبلی و بدون نیاز به سرور ابری.",
+        badge: "WASM",
+        icon: "search",
+      },
+      {
+        id: "zero-leak",
+        title: "امنیت ۱۰۰٪ و بدون کوکی یا تله‌متری",
+        desc: "فاقد ابزارهای ردیابی، آنالیتیکس یا کوکی شخص ثالث. پرونده‌ها فقط در حافظه محلی دستگاه شما وجود دارند.",
+        badge: "Zero-Data",
+        icon: "check",
+      },
+    ],
+
+    // Engine & Cache
+    engineTitle: "مدیریت نسخه موتور و پاکسازی حافظه موقت",
+    engineSubtitle: "اطلاعات موتور فعال و امکان بازنشانی مدل‌های ذخیره‌شده و کش سرویس‌ورکر",
+    activeAppVersion: "نسخه برنامه",
+    activeWasmVersion: "نسخه موتور پردازش",
+    cacheStatusLabel: "وضعیت کش مرورگر",
+    cacheStatusReady: "آماده و پایدار",
+    purgeBtn: "پاکسازی کش و بارگیری مجدد موتور",
+    purgingText: "در حال پاکسازی کش و مدل‌ها...",
+    purgeSuccessTitle: "حافظه موقت و مدل‌های موتور پاکسازی شدند",
+    purgeSuccessDesc: "کش سرویس‌ورکر و پایگاه‌های داده محلی با موفقیت حذف شدند. برای بارگذاری نسخه تازه دکمه زیر را بزنید.",
+    reloadBtn: "بارگذاری مجدد صفحه",
+    updateAvailableTitle: "نسخه جدید موتور در دسترس است",
+    updateAvailableDesc: "نسخه تازه برنامه در پس‌زمینه بارگیری شده و آماده فعال‌سازی است.",
+    updateNowBtn: "به‌روزرسانی و بارگذاری مجدد",
+
+    // Footer
+    footerLicense: "منتشرشده تحت مجوز آپاچی ۲.۰ (Apache-2.0)",
+    footerDesignCredit: "پیاده‌سازی‌شده با مؤلفه‌های سیستم طراحی هشتی (Hashti Design System)",
+    footerOpenSourceNote: "پروژه متن‌باز و غیروابسته برای جامعه کتاب‌خوان و محققان خط فارسی.",
   },
   en: {
     appTitle: "Dalan • دالان",
-    badgeSpatial: "Hashti Spatial Geometry • Zero-Server Client",
-    heroTitle: "Secure PDF to Kindle Reflow Converter",
+    badgeSpatial: "Open Source • Zero-Server",
+    heroTitle: "Local PDF to Kindle Reflow Converter",
     heroSubtitle:
-      "Convert documents and books directly to EPUB 3 in your browser without transmitting any bytes to external servers. Bundled with embedded Vazirmatn typography and pristine RTL/LTR bidirectional support.",
+      "Convert PDF documents to standard EPUB 3 directly in your browser without transmitting any bytes over the network. Includes embedded Vazirmatn typography and readable bidirectional layout.",
     themeDark: "Dark Mode",
     themeLight: "Light Mode",
-    dropPrompt: "Drag & drop your PDF file here, or click to browse",
+    navPrivacy: "Privacy Guarantee",
+    navFeatures: "Features",
+    navEngine: "Engine & Cache",
+    navGithub: "GitHub Repo",
+    navIssues: "Issue Tracker",
+    dropPrompt: "Drag and drop your PDF here, or click to browse",
     dropPromptActive: "Drop your PDF document here...",
-    dropHint: "Absolute client-side privacy; runs 100% in-browser using WebAssembly",
+    dropHint: "Full browser-side processing via WebAssembly with zero network data transfer",
     browseBtn: "Browse PDF",
-    selectedFile: "Selected File",
-    removeFile: "Change File",
+    selectedFile: "Selected Document",
+    removeFile: "Change Document",
     metaHeading: "Document Metadata & Settings",
-    metaDesc: "Review book metadata and select extraction mode",
+    metaDesc: "Verify book details and select text extraction mode",
     bookTitleLabel: "Book Title",
     bookTitlePlaceholder: "e.g., Persian History or Modern Poetry",
     authorLabel: "Author / Translator",
-    authorPlaceholder: "e.g., Ahmad Kasravi",
+    authorPlaceholder: "e.g., Abolfazl Beyhaqi",
     modeLabel: "Extraction Pipeline",
-    modeAuto: "Auto-detect (Digital text or OCR)",
-    modeOcr: "Full Visual OCR (Best for scanned books)",
+    modeAuto: "Auto-detect (Direct digital text or visual OCR)",
+    modeOcr: "Full Visual OCR (Recommended for scanned books)",
     langLabel: "Document Language",
     langFaAr: "Persian & Arabic (fas + ara)",
     langFaOnly: "Persian Only (fas)",
     langEnOnly: "English (eng)",
     startBtn: "Start EPUB Conversion",
-    processingTitle: "Processing in the Hashti Chamber",
-    processingBadge: "Active Conversion",
-    previewAlt: "Live thumbnail of rendered page",
+    processingTitle: "Processing Document Locally",
+    processingBadge: "Web Worker Pipeline",
+    previewAlt: "Live page render thumbnail",
     pageTelemetry: (c, t) => `Page ${c} of ${t}`,
     progressLabel: "Conversion Progress",
-    successTitle: "Document Arrived in Hayati Sanctuary!",
+    successTitle: "Conversion Completed Successfully",
     successDesc:
-      "Your book has been successfully packaged into EPUB 3 with embedded Vazirmatn font and seamless Amazon Kindle compatibility.",
-    downloadBtn: "Download EPUB Book",
+      "Your book has been compiled into EPUB 3 with embedded Vazirmatn font, valid OPF manifest, and Kindle-compatible reflow structure.",
+    downloadBtn: "Download EPUB File",
     convertAnotherBtn: "Convert Another Document",
-    kindleGuideTitle: "Send-to-Kindle Instructions",
+    kindleGuideTitle: "Transfer to Kindle Device",
     kindleGuideDesc:
-      "Upload the downloaded EPUB directly via Amazon's official portal or email it to your Kindle address:",
+      "Upload the downloaded file directly to Amazon or send it to your Kindle email address:",
     kindleLinkText: "Amazon Send to Kindle Portal",
-    metaSummaryLabel: "Generated Book Summary:",
+    metaSummaryLabel: "Output Summary:",
     metaPages: (c) => `${c} processed pages`,
-    metaModeUsed: "Zero-Server In-Browser WASM",
+    metaModeUsed: "100% In-Browser WebAssembly",
     errorTitle: "An error occurred during conversion",
     retryBtn: "Reset & Try Again",
-    archHeading: "Dalan Architecture & The 4 Spatial Thresholds",
-    archSubheading: "Iranian spatial concepts reimagined for secure client-side computing",
-    darvazehCardTitle: "1. Darvazeh (Portal Gate)",
-    darvazehCardDesc:
-      "The threshold of zero-server intake. Complete privacy guarantee ensuring your PDF never leaves your device.",
-    hashtiCardTitle: "2. Hashti (The Octagonal Chamber)",
-    hashtiCardDesc:
-      "Intelligent distribution junction determining digital text vs OCR visual pipelines and normalizing layout directions.",
-    dalanCardTitle: "3. Dalan (The Corridored Conduit)",
-    dalanCardDesc:
-      "Patient multi-threaded passage: WebWorker pipeline rendering pages, executing WASM OCR, and assembling chapters.",
-    hayatiCardTitle: "4. Hayati (The Courtyard Sanctuary)",
-    hayatiCardDesc:
-      "The peaceful destination: An EPUB 3 artifact with embedded Vazirmatn font, valid OPF manifests, and Kindle reflow.",
-    footerText:
-      "Dalan • Powered purely by Hashti Design System components and client-side WASM engine.",
+
+    // Privacy Section
+    privacyTitle: "Client-Side Privacy Guarantee & Technical Verification",
+    privacySubtitle: "All text extraction, image rendering, and EPUB packaging occur entirely on your local machine",
+    privacyBadge: "0 Bytes Sent Over Network",
+    privacyStatement:
+      "Dalan never sends documents, metadata, extracted text, or cookies to any external server. Execution stays strictly inside client-side WebAssembly containers and sandboxed Web Workers.",
+    privacyArchHeading: "Technical Sandboxing Architecture",
+    privacyArchItems: [
+      {
+        title: "Sandboxed Web Workers",
+        desc: "pdf.js and Tesseract WASM OCR run inside isolated browser worker threads with no network egress during conversion.",
+      },
+      {
+        title: "In-Memory EPUB Packaging",
+        desc: "The final EPUB 3 zip archive and embedded Vazirmatn font assets are compiled entirely in client memory via JSZip.",
+      },
+      {
+        title: "100% Offline-First PWA",
+        desc: "Once assets are loaded, the entire conversion pipeline operates with zero internet connectivity.",
+      },
+    ],
+    privacyVerifyHeading: "Verify in Browser DevTools",
+    privacyVerifySteps: [
+      "Open your browser developer tools (press F12 or right-click and choose Inspect).",
+      "Switch to the Network tab and ensure the filter is set to All.",
+      "Select a PDF file and press the Start EPUB Conversion button.",
+      "Confirm that zero outgoing HTTP requests, web sockets, or beacons are dispatched during processing.",
+    ],
+
+    // Features Grid
+    featuresTitle: "Core Open Source Features",
+    featuresSubtitle: "Purpose-built tooling for Persian typography, Kindle reflow, and offline reliability",
+    featureCards: [
+      {
+        id: "kindle-reflow",
+        title: "Kindle EPUB 3 Reflow & Vazirmatn Font",
+        desc: "Packages compliant EPUB 3 markup with embedded Vazirmatn font, RTL/LTR page progression, and smooth reflow on e-ink Kindle devices.",
+        badge: "EPUB 3",
+        icon: "file",
+      },
+      {
+        id: "orthography",
+        title: "Davat & Paknevis ZWNJ Normalization",
+        desc: "Standardizes Persian characters, normalizes Arabic Yeh/Kaf to Persian equivalents, and preserves precise zero-width non-joiners (ZWNJ).",
+        badge: "ZWNJ",
+        icon: "sparkle",
+      },
+      {
+        id: "ocr-wasm",
+        title: "Client-Side Tesseract OCR via WASM",
+        desc: "Extracts text from scanned pages directly on your machine using Tesseract WebAssembly, without third-party vision APIs.",
+        badge: "WASM",
+        icon: "search",
+      },
+      {
+        id: "zero-leak",
+        title: "100% Client-Side Privacy & Zero Telemetry",
+        desc: "Zero tracking scripts, zero advertising beacons, zero third-party cookies, and zero server-side storage.",
+        badge: "Zero-Data",
+        icon: "check",
+      },
+    ],
+
+    // Engine & Cache
+    engineTitle: "Engine Versioning & Cache Management",
+    engineSubtitle: "Review active WebAssembly runtime versions or clear cached offline models",
+    activeAppVersion: "App Version",
+    activeWasmVersion: "Engine Runtime",
+    cacheStatusLabel: "Cache Health",
+    cacheStatusReady: "Ready & Active",
+    purgeBtn: "Purge & Re-fetch Engine Cache",
+    purgingText: "Purging caches and IndexedDB...",
+    purgeSuccessTitle: "Engine cache successfully purged",
+    purgeSuccessDesc: "All Service Worker caches and local database entries were cleared. Reload to fetch fresh runtime artifacts.",
+    reloadBtn: "Reload Page",
+    updateAvailableTitle: "New engine release detected",
+    updateAvailableDesc: "An updated Service Worker and engine package have been downloaded in the background.",
+    updateNowBtn: "Update & Reload",
+
+    // Footer
+    footerLicense: "Released under the Apache-2.0 License",
+    footerDesignCredit: "Built with the Hashti Design System component library",
+    footerOpenSourceNote: "An open-source, non-commercial project for researchers and Persian e-book readers.",
   },
 };
 
@@ -227,6 +406,10 @@ export function DalanConverter() {
   const [outputFilename, setOutputFilename] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Engine cache & update notifications
+  const [isPurging, setIsPurging] = useState(false);
+  const [cacheNotification, setCacheNotification] = useState<"idle" | "purged" | "update-ready">("idle");
+
   const workerRef = useRef<Worker | null>(null);
 
   const t = strings[locale];
@@ -240,6 +423,60 @@ export function DalanConverter() {
       document.documentElement.setAttribute("data-hashti-theme", themeMode);
     }
   }, [locale, direction, themeMode]);
+
+  // Listen for Service Worker update availability
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (!reg) return;
+        reg.addEventListener("updatefound", () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener("statechange", () => {
+              if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+                setCacheNotification("update-ready");
+              }
+            });
+          }
+        });
+      });
+    }
+  }, []);
+
+  const handlePurgeCache = async () => {
+    setIsPurging(true);
+    try {
+      // 1. Delete all CacheStorage entries
+      if ("caches" in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+      }
+
+      // 2. Unregister Service Workers
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((r) => r.unregister()));
+      }
+
+      // 3. Clear IndexedDB databases if accessible
+      if ("indexedDB" in window && indexedDB.databases) {
+        try {
+          const dbs = await indexedDB.databases();
+          dbs.forEach((db) => {
+            if (db.name) indexedDB.deleteDatabase(db.name);
+          });
+        } catch {
+          // ignore IndexedDB enumeration restrictions
+        }
+      }
+
+      setCacheNotification("purged");
+    } catch (err) {
+      console.error("Purge cache error:", err);
+    } finally {
+      setIsPurging(false);
+    }
+  };
 
   const handleFiles = (incomingFiles: File[]) => {
     if (incomingFiles.length > 0) {
@@ -337,12 +574,36 @@ export function DalanConverter() {
     <Theme theme={themeMode} locale={locale} direction={direction}>
       <div className="dalan-app">
         <div className="dalan-container">
-          {/* 1. Top Architectural Bar */}
+          {/* 1. Header Navigation Bar */}
           <header className="dalan-topbar" role="banner">
             <div className="dalan-brand">
-              <h1 className="dalan-brand-title">{t.appTitle}</h1>
-              <Badge kind="primary">{locale === "fa" ? "نسخه کلاینت" : "Client v1.0"}</Badge>
+              <a href="#" className="dalan-brand-link">
+                <span className="dalan-brand-title">{t.appTitle}</span>
+              </a>
+              <Badge kind="primary">{APP_VERSION}</Badge>
+              <Badge kind="neutral">{WASM_CORE_VERSION}</Badge>
             </div>
+
+            <nav className="dalan-nav-links" aria-label="Main Navigation">
+              <a href="#privacy-section" className="dalan-nav-anchor">
+                {t.navPrivacy}
+              </a>
+              <a href="#features-section" className="dalan-nav-anchor">
+                {t.navFeatures}
+              </a>
+              <a href="#engine-section" className="dalan-nav-anchor">
+                {t.navEngine}
+              </a>
+              <a
+                href="https://github.com/raminrez/dalan"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dalan-nav-anchor dalan-nav-ext"
+              >
+                <Icon name="code" size={14} aria-hidden="true" />
+                {t.navGithub}
+              </a>
+            </nav>
 
             <div className="dalan-controls">
               {/* Language Switcher */}
@@ -384,15 +645,49 @@ export function DalanConverter() {
             </div>
           </header>
 
-          {/* 2. Hero Section (Darvazeh) */}
-          <section className="darvazeh-hero" aria-labelledby="hero-title">
-            <div className="darvazeh-badge">
+          {/* Actionable Notification: Cache Purged or Update Ready */}
+          {cacheNotification === "purged" && (
+            <ActionableNotification
+              kind="success"
+              title={t.purgeSuccessTitle}
+              onDismiss={() => setCacheNotification("idle")}
+              action={
+                <Button variant="primary" size="sm" onPress={() => window.location.reload()}>
+                  <Icon name="undo" size={14} aria-hidden="true" />
+                  {t.reloadBtn}
+                </Button>
+              }
+            >
+              {t.purgeSuccessDesc}
+            </ActionableNotification>
+          )}
+
+          {cacheNotification === "update-ready" && (
+            <ActionableNotification
+              kind="info"
+              title={t.updateAvailableTitle}
+              onDismiss={() => setCacheNotification("idle")}
+              action={
+                <Button variant="primary" size="sm" onPress={() => window.location.reload()}>
+                  <Icon name="undo" size={14} aria-hidden="true" />
+                  {t.updateNowBtn}
+                </Button>
+              }
+            >
+              {t.updateAvailableDesc}
+            </ActionableNotification>
+          )}
+
+          {/* 2. Hero Section */}
+          <section className="dalan-hero" aria-labelledby="hero-title">
+            <div className="dalan-hero-badge">
               <Badge kind="secondary">{t.badgeSpatial}</Badge>
+              <Badge kind="success">{locale === "fa" ? "پردازش در مرورگر" : "Local WASM"}</Badge>
             </div>
-            <h2 id="hero-title" className="darvazeh-title">
+            <h2 id="hero-title" className="dalan-hero-title">
               {t.heroTitle}
             </h2>
-            <p className="darvazeh-subtitle">{t.heroSubtitle}</p>
+            <p className="dalan-hero-subtitle">{t.heroSubtitle}</p>
           </section>
 
           {/* 3. Main Conversion Stage */}
@@ -400,12 +695,8 @@ export function DalanConverter() {
             {/* IDLE STATE: Upload & Settings */}
             {status === "idle" && (
               <Card elevation="raised">
-                <CardHeader
-                  title={t.dropPrompt}
-                  description={t.dropHint}
-                />
+                <CardHeader title={t.dropPrompt} description={t.dropHint} />
                 <CardBody>
-                  {/* Hashti DropZone with integrated FileTrigger */}
                   <DropZone
                     variant="dashed"
                     className="hashti-dropzone-custom"
@@ -441,7 +732,9 @@ export function DalanConverter() {
                     <div className="dalan-options-section" style={{ marginTop: "1.5rem" }}>
                       <div className="file-selected-badge" style={{ marginBottom: "1rem" }}>
                         <Badge kind="success">{t.selectedFile}</Badge>
-                        <span>{file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                        <span>
+                          {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                        </span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -500,7 +793,7 @@ export function DalanConverter() {
               </Card>
             )}
 
-            {/* PROCESSING STATE: Hashti Chamber */}
+            {/* PROCESSING STATE: WebWorker Pipeline */}
             {status === "processing" && (
               <Card elevation="raised">
                 <CardHeader
@@ -542,7 +835,7 @@ export function DalanConverter() {
               </Card>
             )}
 
-            {/* SUCCESS STATE: Hayati Sanctuary */}
+            {/* SUCCESS STATE */}
             {status === "success" && (
               <Card elevation="raised">
                 <CardHeader
@@ -551,8 +844,13 @@ export function DalanConverter() {
                 />
                 <CardBody>
                   <div className="hayati-sanctuary-content">
-                    <Icon name="check" size={48} aria-hidden="true" style={{ color: "var(--hashti-support-success, #198038)" }} />
-                    <p className="darvazeh-subtitle">{t.successDesc}</p>
+                    <Icon
+                      name="check"
+                      size={48}
+                      aria-hidden="true"
+                      style={{ color: "var(--hashti-support-success, #198038)" }}
+                    />
+                    <p className="dalan-hero-subtitle">{t.successDesc}</p>
 
                     <div className="hayati-meta-summary">
                       <Badge kind="neutral">{title || outputFilename}</Badge>
@@ -583,7 +881,12 @@ export function DalanConverter() {
                       <Card elevation="flat">
                         <CardBody>
                           <div className="hayati-instruction-body">
-                            <Icon name="info" size={20} aria-hidden="true" style={{ flexShrink: 0, marginTop: "2px" }} />
+                            <Icon
+                              name="info"
+                              size={20}
+                              aria-hidden="true"
+                              style={{ flexShrink: 0, marginTop: "2px" }}
+                            />
                             <div>
                               <strong>{t.kindleGuideTitle}</strong>
                               <p style={{ margin: "4px 0 0" }}>
@@ -615,7 +918,12 @@ export function DalanConverter() {
                 />
                 <CardBody>
                   <div className="chamber-error-content">
-                    <Icon name="error" size={40} aria-hidden="true" style={{ color: "var(--hashti-support-error, #da1e28)" }} />
+                    <Icon
+                      name="error"
+                      size={40}
+                      aria-hidden="true"
+                      style={{ color: "var(--hashti-support-error, #da1e28)" }}
+                    />
                     <p style={{ color: "var(--hashti-text-error, #fa4d56)" }}>{errorMsg}</p>
                     <Button variant="secondary" size="md" onPress={handleReset}>
                       <Icon name="undo" size={16} aria-hidden="true" />
@@ -627,67 +935,168 @@ export function DalanConverter() {
             )}
           </main>
 
-          {/* 4. Architecture & 4 Thresholds Section */}
-          <section className="dalan-thresholds-section" aria-labelledby="arch-heading">
-            <h3 id="arch-heading" className="thresholds-heading">
-              {t.archHeading}
-            </h3>
-            <p className="thresholds-subheading">{t.archSubheading}</p>
-
-            <div className="thresholds-grid">
-              <div className="threshold-card">
-                <Card elevation="flat">
-                  <CardHeader
-                    title={t.darvazehCardTitle}
-                    action={<Badge kind="neutral">01</Badge>}
-                  />
-                  <CardBody>
-                    <p className="threshold-desc">{t.darvazehCardDesc}</p>
-                  </CardBody>
-                </Card>
+          {/* 4. Client-Side Privacy Guarantee Section */}
+          <section id="privacy-section" className="dalan-section" aria-labelledby="privacy-heading">
+            <div className="dalan-section-header">
+              <div className="dalan-section-badge">
+                <Badge kind="success">{t.privacyBadge}</Badge>
               </div>
+              <h3 id="privacy-heading" className="dalan-section-title">
+                {t.privacyTitle}
+              </h3>
+              <p className="dalan-section-subtitle">{t.privacySubtitle}</p>
+            </div>
 
-              <div className="threshold-card">
-                <Card elevation="flat">
-                  <CardHeader
-                    title={t.hashtiCardTitle}
-                    action={<Badge kind="neutral">02</Badge>}
+            <Card elevation="flat" className="dalan-privacy-card">
+              <CardBody>
+                <div className="dalan-privacy-lead">
+                  <Icon
+                    name="check"
+                    size={28}
+                    aria-hidden="true"
+                    style={{ color: "var(--hashti-support-success, #198038)", flexShrink: 0 }}
                   />
-                  <CardBody>
-                    <p className="threshold-desc">{t.hashtiCardDesc}</p>
-                  </CardBody>
-                </Card>
-              </div>
+                  <p className="dalan-privacy-lead-text">{t.privacyStatement}</p>
+                </div>
 
-              <div className="threshold-card">
-                <Card elevation="flat">
-                  <CardHeader
-                    title={t.dalanCardTitle}
-                    action={<Badge kind="neutral">03</Badge>}
-                  />
-                  <CardBody>
-                    <p className="threshold-desc">{t.dalanCardDesc}</p>
-                  </CardBody>
-                </Card>
-              </div>
+                <div className="dalan-arch-grid">
+                  {t.privacyArchItems.map((item, idx) => (
+                    <div key={idx} className="dalan-arch-item">
+                      <div className="dalan-arch-item-header">
+                        <Badge kind="neutral">0{idx + 1}</Badge>
+                        <h4 className="dalan-arch-item-title">{item.title}</h4>
+                      </div>
+                      <p className="dalan-arch-item-desc">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="threshold-card">
-                <Card elevation="flat">
-                  <CardHeader
-                    title={t.hayatiCardTitle}
-                    action={<Badge kind="neutral">04</Badge>}
-                  />
-                  <CardBody>
-                    <p className="threshold-desc">{t.hayatiCardDesc}</p>
-                  </CardBody>
-                </Card>
-              </div>
+                {/* DevTools Verification Walkthrough */}
+                <div className="dalan-verify-box">
+                  <div className="dalan-verify-header">
+                    <Icon name="code" size={18} aria-hidden="true" />
+                    <strong>{t.privacyVerifyHeading}</strong>
+                  </div>
+                  <ol className="dalan-verify-steps">
+                    {t.privacyVerifySteps.map((step, idx) => (
+                      <li key={idx} className="dalan-verify-step">
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </CardBody>
+            </Card>
+          </section>
+
+          {/* 5. Core Open Source Features Grid */}
+          <section id="features-section" className="dalan-section" aria-labelledby="features-heading">
+            <div className="dalan-section-header">
+              <h3 id="features-heading" className="dalan-section-title">
+                {t.featuresTitle}
+              </h3>
+              <p className="dalan-section-subtitle">{t.featuresSubtitle}</p>
+            </div>
+
+            <div className="dalan-features-grid">
+              {t.featureCards.map((card) => (
+                <div key={card.id} className="dalan-feature-card-wrapper">
+                  <Card elevation="flat">
+                    <CardHeader
+                      title={card.title}
+                      action={<Badge kind="neutral">{card.badge}</Badge>}
+                    />
+                    <CardBody>
+                      <p className="dalan-feature-desc">{card.desc}</p>
+                    </CardBody>
+                  </Card>
+                </div>
+              ))}
             </div>
           </section>
 
-          {/* 5. Footer */}
+          {/* 6. Engine Versioning & Cache Purge Section */}
+          <section id="engine-section" className="dalan-section" aria-labelledby="engine-heading">
+            <div className="dalan-section-header">
+              <h3 id="engine-heading" className="dalan-section-title">
+                {t.engineTitle}
+              </h3>
+              <p className="dalan-section-subtitle">{t.engineSubtitle}</p>
+            </div>
+
+            <Card elevation="flat">
+              <CardBody>
+                <div className="dalan-engine-panel">
+                  <div className="dalan-engine-meta">
+                    <div className="dalan-engine-stat">
+                      <span className="dalan-stat-label">{t.activeAppVersion}</span>
+                      <span className="dalan-stat-value">{APP_VERSION}</span>
+                    </div>
+                    <div className="dalan-engine-stat">
+                      <span className="dalan-stat-label">{t.activeWasmVersion}</span>
+                      <span className="dalan-stat-value">{WASM_CORE_VERSION}</span>
+                    </div>
+                    <div className="dalan-engine-stat">
+                      <span className="dalan-stat-label">{t.cacheStatusLabel}</span>
+                      <Badge kind="success">{t.cacheStatusReady}</Badge>
+                    </div>
+                  </div>
+
+                  <div className="dalan-engine-actions">
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onPress={handlePurgeCache}
+                      isDisabled={isPurging}
+                    >
+                      <Icon name="undo" size={16} aria-hidden="true" />
+                      {isPurging ? t.purgingText : t.purgeBtn}
+                    </Button>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </section>
+
+          {/* 7. Comprehensive Open Source Footer */}
           <footer className="dalan-footer" role="contentinfo">
-            <p>{t.footerText}</p>
+            <div className="dalan-footer-top">
+              <div className="dalan-footer-brand">
+                <strong>{t.appTitle}</strong>
+                <Badge kind="primary">{APP_VERSION}</Badge>
+                <Badge kind="neutral">{WASM_CORE_VERSION}</Badge>
+              </div>
+
+              <div className="dalan-footer-links">
+                <a
+                  href="https://github.com/raminrez/dalan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="dalan-footer-link"
+                >
+                  <Icon name="code" size={14} aria-hidden="true" />
+                  {t.navGithub}
+                </a>
+                <a
+                  href="https://github.com/raminrez/dalan/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="dalan-footer-link"
+                >
+                  <Icon name="info" size={14} aria-hidden="true" />
+                  {t.navIssues}
+                </a>
+                <a href="#privacy-section" className="dalan-footer-link">
+                  {t.navPrivacy}
+                </a>
+              </div>
+            </div>
+
+            <div className="dalan-footer-bottom">
+              <p className="dalan-footer-text">{t.footerLicense}</p>
+              <p className="dalan-footer-text">{t.footerDesignCredit}</p>
+              <p className="dalan-footer-note">{t.footerOpenSourceNote}</p>
+            </div>
           </footer>
         </div>
       </div>
