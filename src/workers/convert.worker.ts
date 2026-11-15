@@ -23,10 +23,13 @@ self.onmessage = async (e: MessageEvent) => {
     // Check if we need OCR
     const needsOcr = mode === "ocr";
 
+    const origin = self.location.origin;
+    const tessdataPath = `${origin}/tessdata`;
+
     if (needsOcr) {
       self.postMessage({ type: "progress", stage: "ocr_init", percent: 10, message: "آماده‌سازی موتور پردازش تصویر (OCR)..." });
       tesseractWorker = await createWorker(lang, 1, {
-        langPath: "/tessdata",
+        langPath: tessdataPath,
         cacheMethod: "readOnly",
         gzip: false,
       });
@@ -81,7 +84,7 @@ self.onmessage = async (e: MessageEvent) => {
         if (!tesseractWorker) {
           self.postMessage({ type: "progress", stage: "ocr_init", percent: currentPercent, message: "آماده‌سازی OCR..." });
           tesseractWorker = await createWorker(lang, 1, {
-            langPath: "/tessdata",
+            langPath: tessdataPath,
             cacheMethod: "readOnly",
             gzip: false,
           });
