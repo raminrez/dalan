@@ -244,6 +244,7 @@ const strings: Record<Locale, Translations> = {
 
     // Footer
     footerLicense: "منتشرشده تحت مجوز آپاچی ۲.۰ (Apache-2.0)",
+    footerDeveloper: "توسعه‌داده‌شده توسط",
     footerDesignCredit: "پیاده‌سازی‌شده با مؤلفه‌های سیستم طراحی هشتی (Hashti Design System)",
     footerOpenSourceNote: "پروژه متن‌باز و غیروابسته برای جامعه کتاب‌خوان و محققان خط فارسی.",
   },
@@ -381,6 +382,7 @@ const strings: Record<Locale, Translations> = {
 
     // Footer
     footerLicense: "Released under the Apache-2.0 License",
+    footerDeveloper: "Developed by",
     footerDesignCredit: "Built with the Hashti Design System component library",
     footerOpenSourceNote: "An open-source, non-commercial project for researchers and Persian e-book readers.",
   },
@@ -1094,6 +1096,17 @@ export function DalanConverter() {
 
             <div className="dalan-footer-bottom">
               <p className="dalan-footer-text">{t.footerLicense}</p>
+              <p className="dalan-footer-text">
+                {t.footerDeveloper}{" "}
+                <a
+                  href="https://raminrez.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="dalan-dev-link"
+                >
+                  raminrez.dev
+                </a>
+              </p>
               <p className="dalan-footer-text">{t.footerDesignCredit}</p>
               <p className="dalan-footer-note">{t.footerOpenSourceNote}</p>
             </div>
