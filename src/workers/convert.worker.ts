@@ -80,12 +80,28 @@ self.onmessage = async (e: MessageEvent) => {
         }
 
         // Render page to canvas
-        const viewport = page.getViewport({ scale: 2.0 });
+        const viewport = page.getViewport({ scale: 1.5 });
         const canvas = new OffscreenCanvas(viewport.width, viewport.height);
         const ctx = canvas.getContext("2d")!;
         await page.render({ canvasContext: ctx as any, viewport }).promise;
 
         const blob = await canvas.convertToBlob();
+
+        // Emit thumbnail for live UI feedback
+        try {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            self.postMessage({
+              type: "thumbnail",
+              page: pageNum,
+              dataUrl: reader.result,
+            });
+          };
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          // ignore thumbnail errors
+        }
+
         const { data } = await tesseractWorker.recognize(blob);
         pageText = data.text;
       }

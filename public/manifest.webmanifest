@@ -1,0 +1,19 @@
+{
+  "name": "دالان | Dalan",
+  "short_name": "Dalan",
+  "description": "تبدیل امن و سریع کتاب‌های PDF به فرمت کتاب‌خوان کیندل کاملاً درون مرورگر",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090A0F",
+  "theme_color": "#08BDBA",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

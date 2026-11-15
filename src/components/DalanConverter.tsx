@@ -12,6 +12,7 @@ export function DalanConverter() {
   const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [progressMsg, setProgressMsg] = useState("");
   const [percent, setPercent] = useState(0);
+  const [activeThumbnail, setActiveThumbnail] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [outputFilename, setOutputFilename] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -47,6 +48,8 @@ export function DalanConverter() {
         if (data.type === "progress") {
           setPercent(data.percent || 0);
           setProgressMsg(data.message || "");
+        } else if (data.type === "thumbnail") {
+          setActiveThumbnail(data.dataUrl);
         } else if (data.type === "complete") {
           const url = URL.createObjectURL(data.epubBlob);
           setDownloadUrl(url);
@@ -171,6 +174,12 @@ export function DalanConverter() {
             <RefreshCw className="spinning-icon" />
             <h2 className="step-title">دالان در حال تبدیل سند شماست</h2>
             <p className="step-desc">{progressMsg}</p>
+
+            {activeThumbnail && (
+              <div className="thumbnail-preview-container">
+                <img src={activeThumbnail} alt="پیش‌نمایش زنده صفحه" className="thumbnail-preview-img" />
+              </div>
+            )}
 
             <ProgressBar value={percent} label="پیشرفت پردازش" showValueLabel className="hashti-progress" />
           </div>
