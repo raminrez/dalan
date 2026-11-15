@@ -60,7 +60,7 @@ This document specifies the ongoing architectural roadmap and tracer-bullet tick
 
 ### Ticket DLN-008: Dual-Column Reflow & Text Boundary Segmentation
 * **File:** `docs/issues/DLN-008-dual-column-reflow.md`
-* **Status:** Blocked by DLN-007
+* **Status:** Done
 * **Goal:** Prevent sentence interleaving in multi-column PDFs (academic papers, magazines) by segmenting columns before baseline sorting.
 * **Acceptance Criteria:**
   1. Detect multi-column gutters by analyzing X-coordinate clustering of text items.

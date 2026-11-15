@@ -1,7 +1,7 @@
 # Issue DLN-008: Dual-Column Reflow & Text Boundary Segmentation
 
 * **Parent Spec:** `docs/SPEC.md`
-* **Status:** Blocked by DLN-007
+* **Status:** Done
 * **Blocks:** DLN-009
 
 ## Problem Statement
@@ -13,5 +13,5 @@ Academic papers, older books, and periodicals often format content into two colu
 3. Order columns according to script direction (Right-to-Left for Persian/Arabic: right column first, then left column).
 
 ## Acceptance Criteria
-- [ ] Two-column Persian documents produce contiguous reading text without paragraph interleaving.
-- [ ] Single-column pages remain unaffected.
+- [x] Two-column Persian documents produce contiguous reading text without paragraph interleaving.
+- [x] Single-column pages remain unaffected.

@@ -110,6 +110,328 @@ function detectHeadingInPage(text: string, maxFontSize?: number, avgFontSize?: n
   return null;
 }
 
+// Helper types and interfaces for layout extraction
+interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface TextItemWithBox {
+  item: any;
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+}
+
+interface ColumnGutter {
+  left: number;
+  right: number;
+  center: number;
+}
+
+/**
+ * Reconstructs lines of text items sorted vertically top-to-bottom,
+ * and within each line horizontally according to script direction.
+ */
+function reconstructLinesFromItems(items: TextItemWithBox[], isRTL: boolean): string {
+  if (items.length === 0) return "";
+
+  // Group items into lines by Y coordinate with baseline tolerance (~3.5px)
+  const Y_TOLERANCE = 3.5;
+  const lines: { y: number; items: TextItemWithBox[] }[] = [];
+
+  for (const item of items) {
+    let matchedLine = lines.find((line) => Math.abs(line.y - item.y) <= Y_TOLERANCE);
+    if (!matchedLine) {
+      matchedLine = { y: item.y, items: [] };
+      lines.push(matchedLine);
+    }
+    matchedLine.items.push(item);
+  }
+
+  // Sort lines top to bottom (descending Y in PDF coordinates)
+  lines.sort((a, b) => b.y - a.y);
+
+  const lineStrings: string[] = [];
+  for (const line of lines) {
+    // In Persian/Arabic (RTL), line reads from right to left (descending X)
+    // In English/LTR, line reads from left to right (ascending X)
+    if (isRTL) {
+      line.items.sort((a, b) => b.x - a.x);
+    } else {
+      line.items.sort((a, b) => a.x - b.x);
+    }
+    lineStrings.push(line.items.map((it) => it.str).join(" "));
+  }
+
+  return lineStrings.join("\n");
+}
+
+/**
+ * Detects if a page contains a distinct two-column layout separated by a vertical gutter.
+ * Evaluates the middle 40% of the page (0.3 * pageWidth to 0.7 * pageWidth).
+ */
+function detectTwoColumnGutter(
+  items: TextItemWithBox[],
+  pageWidth: number
+): ColumnGutter | null {
+  if (items.length < 10 || pageWidth <= 0) {
+    return null;
+  }
+
+  // Define candidate gutter search range: middle band of the page
+  const searchStart = pageWidth * 0.3;
+  const searchEnd = pageWidth * 0.7;
+  const minGutterWidth = 14; // minimum vertical blank space in points
+
+  // Filter out full-width spanning items (e.g. wide titles, banners, horizontal rules)
+  // that would bridge across both columns (> 55% of page width)
+  const nonSpanningItems = items.filter(
+    (it) => it.width < pageWidth * 0.55 && it.str.trim().length > 0
+  );
+
+  if (nonSpanningItems.length < 8) {
+    return null;
+  }
+
+  // Check intervals/gutters between items in the search window.
+  // We can sample vertical slices across searchStart..searchEnd with 2px step
+  // and check how many non-spanning items cross each X position.
+  const step = 2;
+  const slicesCount = Math.floor((searchEnd - searchStart) / step);
+  const overlapCounts: number[] = new Array(slicesCount).fill(0);
+
+  for (const it of nonSpanningItems) {
+    const itLeft = it.x;
+    const itRight = it.x + it.width;
+
+    const startIdx = Math.max(0, Math.floor((itLeft - searchStart) / step));
+    const endIdx = Math.min(slicesCount - 1, Math.floor((itRight - searchStart) / step));
+
+    for (let i = startIdx; i <= endIdx; i++) {
+      overlapCounts[i]++;
+    }
+  }
+
+  // Find continuous intervals with 0 (or at most 1 due to stray character) overlaps
+  let bestGutterStart = -1;
+  let bestGutterEnd = -1;
+  let maxZeroGap = 0;
+
+  let currentStart = -1;
+  for (let i = 0; i < slicesCount; i++) {
+    // A clean gutter has 0 overlaps of non-spanning text
+    if (overlapCounts[i] === 0) {
+      if (currentStart === -1) currentStart = i;
+    } else {
+      if (currentStart !== -1) {
+        const gap = (i - currentStart) * step;
+        if (gap > maxZeroGap) {
+          maxZeroGap = gap;
+          bestGutterStart = currentStart;
+          bestGutterEnd = i;
+        }
+        currentStart = -1;
+      }
+    }
+  }
+
+  if (currentStart !== -1) {
+    const gap = (slicesCount - currentStart) * step;
+    if (gap > maxZeroGap) {
+      maxZeroGap = gap;
+      bestGutterStart = currentStart;
+      bestGutterEnd = slicesCount;
+    }
+  }
+
+  // If no completely empty gap found >= minGutterWidth, check for gap with <= 1 stray item
+  if (maxZeroGap < minGutterWidth) {
+    let currentLowStart = -1;
+    let maxLowGap = 0;
+    for (let i = 0; i < slicesCount; i++) {
+      if (overlapCounts[i] <= 1) {
+        if (currentLowStart === -1) currentLowStart = i;
+      } else {
+        if (currentLowStart !== -1) {
+          const gap = (i - currentLowStart) * step;
+          if (gap > maxLowGap) {
+            maxLowGap = gap;
+            bestGutterStart = currentLowStart;
+            bestGutterEnd = i;
+          }
+          currentLowStart = -1;
+        }
+      }
+    }
+    if (currentLowStart !== -1) {
+      const gap = (slicesCount - currentLowStart) * step;
+      if (gap > maxLowGap) {
+        maxLowGap = gap;
+        bestGutterStart = currentLowStart;
+        bestGutterEnd = slicesCount;
+      }
+    }
+    if (maxLowGap < minGutterWidth) {
+      return null;
+    }
+  }
+
+  const gutterLeft = searchStart + bestGutterStart * step;
+  const gutterRight = searchStart + bestGutterEnd * step;
+  const gutterCenter = (gutterLeft + gutterRight) / 2;
+
+  // Verify that there is substantial content on BOTH sides of this gutter
+  const leftItems = nonSpanningItems.filter((it) => it.x + it.width <= gutterCenter + 5);
+  const rightItems = nonSpanningItems.filter((it) => it.x >= gutterCenter - 5);
+
+  const minItemsPerColumn = Math.max(4, Math.floor(nonSpanningItems.length * 0.15));
+  if (leftItems.length < minItemsPerColumn || rightItems.length < minItemsPerColumn) {
+    return null;
+  }
+
+  return {
+    left: gutterLeft,
+    right: gutterRight,
+    center: gutterCenter,
+  };
+}
+
+/**
+ * Extracts and reconstructs text from a page, segmenting multi-column layouts
+ * while respecting reading order (RTL: right column first; LTR: left column first)
+ * and placing spanning headers/banners in correct order.
+ */
+function extractPageTextWithLayout(
+  items: any[],
+  pageWidth: number,
+  isRTL: boolean
+): string {
+  if (!items || items.length === 0) return "";
+
+  // Normalize text items with positions
+  const textItems: TextItemWithBox[] = [];
+  for (const item of items) {
+    const str = item.str || "";
+    if (!str && !item.hasEOL) continue;
+
+    const x = item.transform[4] || 0;
+    const y = item.transform[5] || 0;
+    const width = typeof item.width === "number" && item.width > 0
+      ? item.width
+      : Math.abs(item.transform[0] || 10) * (str.length || 1) * 0.5;
+    const height = Math.abs(item.height || item.transform[3] || item.transform[0] || 10);
+    const fontSize = Math.hypot(item.transform[0] || 0, item.transform[1] || 0) || height;
+
+    textItems.push({
+      item,
+      str,
+      x,
+      y,
+      width,
+      height,
+      fontSize,
+    });
+  }
+
+  if (textItems.length === 0) return "";
+
+  // Check for dual-column gutter
+  const gutter = detectTwoColumnGutter(textItems, pageWidth);
+
+  // If no column gutter is detected, fallback directly to single-column reconstruction
+  if (!gutter) {
+    return reconstructLinesFromItems(textItems, isRTL);
+  }
+
+  // Segment items into Spanning (headers/titles across gutter), Left Column, and Right Column
+  const spanningItems: TextItemWithBox[] = [];
+  const leftColumnItems: TextItemWithBox[] = [];
+  const rightColumnItems: TextItemWithBox[] = [];
+
+  for (const it of textItems) {
+    const itemLeft = it.x;
+    const itemRight = it.x + it.width;
+
+    // An item is considered spanning if:
+    // 1. It crosses across the gutter center, OR
+    // 2. Its width covers > 60% of the page
+    const crossesGutter = itemLeft < (gutter.center - 8) && itemRight > (gutter.center + 8);
+    const isFullWidth = it.width > pageWidth * 0.6;
+
+    if (crossesGutter || isFullWidth) {
+      spanningItems.push(it);
+    } else if (itemRight <= gutter.center) {
+      leftColumnItems.push(it);
+    } else {
+      rightColumnItems.push(it);
+    }
+  }
+
+  // Separate spanning items into Top Headers (above the two columns) and Bottom Footers (below the two columns)
+  // Calculate vertical bounds of column items
+  const colItems = [...leftColumnItems, ...rightColumnItems];
+  let colMaxY = -Infinity;
+  let colMinY = Infinity;
+
+  if (colItems.length > 0) {
+    for (const it of colItems) {
+      if (it.y > colMaxY) colMaxY = it.y;
+      if (it.y < colMinY) colMinY = it.y;
+    }
+  }
+
+  const topSpanning: TextItemWithBox[] = [];
+  const bottomSpanning: TextItemWithBox[] = [];
+
+  for (const sp of spanningItems) {
+    // If spanning item is higher than column items (or near top of column with tolerance)
+    if (colItems.length === 0 || sp.y >= colMaxY - 10) {
+      topSpanning.push(sp);
+    } else {
+      bottomSpanning.push(sp);
+    }
+  }
+
+  const sections: string[] = [];
+
+  // 1. Top Spanning Header / Title
+  if (topSpanning.length > 0) {
+    const headerText = reconstructLinesFromItems(topSpanning, isRTL);
+    if (headerText.trim()) sections.push(headerText);
+  }
+
+  // 2. Columns according to script reading order
+  // Persian / Arabic (RTL): read Right Column first from top to bottom, then Left Column
+  // English / LTR: read Left Column first from top to bottom, then Right Column
+  if (isRTL) {
+    const rightText = reconstructLinesFromItems(rightColumnItems, isRTL);
+    if (rightText.trim()) sections.push(rightText);
+
+    const leftText = reconstructLinesFromItems(leftColumnItems, isRTL);
+    if (leftText.trim()) sections.push(leftText);
+  } else {
+    const leftText = reconstructLinesFromItems(leftColumnItems, isRTL);
+    if (leftText.trim()) sections.push(leftText);
+
+    const rightText = reconstructLinesFromItems(rightColumnItems, isRTL);
+    if (rightText.trim()) sections.push(rightText);
+  }
+
+  // 3. Bottom Spanning Footers / Notes
+  if (bottomSpanning.length > 0) {
+    const footerText = reconstructLinesFromItems(bottomSpanning, isRTL);
+    if (footerText.trim()) sections.push(footerText);
+  }
+
+  return sections.join("\n");
+}
+
 self.onmessage = async (e: MessageEvent) => {
   const { fileBuffer, options } = e.data;
   const { lang = "fas+ara", mode = "auto", title = "کتاب صوتی", author = "نامشخص" } = options || {};
@@ -169,12 +491,8 @@ self.onmessage = async (e: MessageEvent) => {
         const textContent = await page.getTextContent();
         const items = textContent.items as any[];
         if (items && items.length > 0) {
-          const lineMap = new Map<number, any[]>();
+          // Gather font metrics
           for (const item of items) {
-            const y = Math.round(item.transform[5]);
-            if (!lineMap.has(y)) lineMap.set(y, []);
-            lineMap.get(y)!.push(item);
-
             const fontSize = Math.hypot(item.transform[0] || 0, item.transform[1] || 0) || Math.abs(item.height || 0);
             if (fontSize > 0) {
               if (fontSize > maxFontSize) maxFontSize = fontSize;
@@ -183,17 +501,16 @@ self.onmessage = async (e: MessageEvent) => {
             }
           }
 
-          // Sort descending Y (top to bottom)
-          const sortedYs = Array.from(lineMap.keys()).sort((a, b) => b - a);
-          const lines: string[] = [];
+          // Determine page width from viewport
+          const viewport = page.getViewport({ scale: 1 });
+          const pageWidth = viewport.width;
 
-          for (const y of sortedYs) {
-            const row = lineMap.get(y)!;
-            // In Persian RTL, row runs right to left
-            row.sort((a, b) => b.transform[4] - a.transform[4]);
-            lines.push(row.map((it) => it.str).join(" "));
-          }
-          pageText = lines.join("\n");
+          // Determine if document/page is predominantly RTL
+          // Based on selected OCR lang ("fas", "ara") or detection
+          const isRTL = lang.includes("fas") || lang.includes("ara") || !lang.includes("eng");
+
+          // Extract text with dual-column segmentation and correct reading order
+          pageText = extractPageTextWithLayout(items, pageWidth, isRTL);
         }
       }
 
