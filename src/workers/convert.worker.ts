@@ -25,7 +25,11 @@ self.onmessage = async (e: MessageEvent) => {
 
     if (needsOcr) {
       self.postMessage({ type: "progress", stage: "ocr_init", percent: 10, message: "آماده‌سازی موتور پردازش تصویر (OCR)..." });
-      tesseractWorker = await createWorker(lang);
+      tesseractWorker = await createWorker(lang, 1, {
+        langPath: "/tessdata",
+        cacheMethod: "readOnly",
+        gzip: false,
+      });
     }
 
     let accumulatedText = "";
@@ -76,7 +80,11 @@ self.onmessage = async (e: MessageEvent) => {
       if (!pageText.trim()) {
         if (!tesseractWorker) {
           self.postMessage({ type: "progress", stage: "ocr_init", percent: currentPercent, message: "آماده‌سازی OCR..." });
-          tesseractWorker = await createWorker(lang);
+          tesseractWorker = await createWorker(lang, 1, {
+            langPath: "/tessdata",
+            cacheMethod: "readOnly",
+            gzip: false,
+          });
         }
 
         // Render page to canvas
