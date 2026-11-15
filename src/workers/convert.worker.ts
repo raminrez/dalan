@@ -1,10 +1,150 @@
 import * as pdfjsLib from "pdfjs-dist";
 import { createWorker } from "tesseract.js";
 import { normalizePersianText } from "../lib/persianNormalizer";
-import { buildEpubBlob } from "../lib/epubBuilder";
+import { buildEpubBlob, type EpubImage } from "../lib/epubBuilder";
 
 // Setup PDF.js worker from CDN or local
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+interface ExtractedPageImage {
+  filename: string;
+  buffer: ArrayBuffer;
+  mimeType: string;
+  altText: string;
+}
+
+/**
+ * Converts raw PDF image object or RGBA data into JPEG ArrayBuffer via OffscreenCanvas
+ */
+async function imageObjToArrayBuffer(imgObj: any): Promise<{ buffer: ArrayBuffer; mimeType: string } | null> {
+  try {
+    const width = imgObj.width;
+    const height = imgObj.height;
+    if (!width || !height || width <= 10 || height <= 10) {
+      return null;
+    }
+
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Check if imgObj is already an ImageBitmap or HTMLImageElement-like
+    if (imgObj.data) {
+      const imgData = ctx.createImageData(width, height);
+      const data = imgObj.data;
+      const target = imgData.data;
+
+      // Handle different color formats
+      // Case 1: RGBA (length === width * height * 4)
+      if (data.length === width * height * 4) {
+        target.set(data);
+      } else if (data.length === width * height * 3) {
+        // Case 2: RGB (length === width * height * 3)
+        let s = 0;
+        let t = 0;
+        const total = width * height;
+        for (let i = 0; i < total; i++) {
+          target[t] = data[s];
+          target[t + 1] = data[s + 1];
+          target[t + 2] = data[s + 2];
+          target[t + 3] = 255;
+          s += 3;
+          t += 4;
+        }
+      } else if (data.length === width * height) {
+        // Case 3: Grayscale 1 byte per pixel
+        let t = 0;
+        const total = width * height;
+        for (let i = 0; i < total; i++) {
+          const val = data[i];
+          target[t] = val;
+          target[t + 1] = val;
+          target[t + 2] = val;
+          target[t + 3] = 255;
+          t += 4;
+        }
+      } else {
+        return null;
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    } else if (imgObj.bitmap) {
+      ctx.drawImage(imgObj.bitmap, 0, 0);
+    } else {
+      return null;
+    }
+
+    const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 });
+    const buffer = await blob.arrayBuffer();
+    return { buffer, mimeType: "image/jpeg" };
+  } catch (err) {
+    console.warn("Failed to convert image object to ArrayBuffer:", err);
+    return null;
+  }
+}
+
+/**
+ * Extracts raster illustrations embedded in a PDF page.
+ */
+async function extractImagesFromPage(page: any, pageNum: number): Promise<ExtractedPageImage[]> {
+  const images: ExtractedPageImage[] = [];
+  try {
+    const ops = await page.getOperatorList();
+    const imageNames = new Set<string>();
+
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i];
+      const args = ops.argsArray[i];
+
+      // OPS.paintImageXObject (85) or OPS.paintXObject (66)
+      if (
+        fn === pdfjsLib.OPS.paintImageXObject ||
+        fn === pdfjsLib.OPS.paintXObject ||
+        fn === pdfjsLib.OPS.paintInlineImageXObject
+      ) {
+        const imgName = args && args[0];
+        if (typeof imgName === "string" && !imageNames.has(imgName)) {
+          imageNames.add(imgName);
+        }
+      }
+    }
+
+    let imgIndex = 1;
+    for (const name of imageNames) {
+      try {
+        let imgObj: any = null;
+        if (page.objs && typeof page.objs.get === "function") {
+          imgObj = await new Promise((resolve) => {
+            page.objs.get(name, (obj: any) => resolve(obj));
+          });
+        }
+
+        if (imgObj) {
+          // Filter out tiny icons or bullet decorations (e.g. < 40x40)
+          if (imgObj.width && imgObj.height && (imgObj.width < 40 || imgObj.height < 40)) {
+            continue;
+          }
+
+          const converted = await imageObjToArrayBuffer(imgObj);
+          if (converted) {
+            images.push({
+              filename: `img_p${pageNum}_${imgIndex}.jpg`,
+              buffer: converted.buffer,
+              mimeType: converted.mimeType,
+              altText: `تصویر شماره ${imgIndex} صفحه ${pageNum}`,
+            });
+            imgIndex++;
+          }
+        }
+      } catch (e) {
+        // Individual image extraction error
+      }
+    }
+  } catch (err) {
+    console.warn(`Error scanning images for page ${pageNum}:`, err);
+  }
+  return images;
+}
 
 interface DetectedHeading {
   title: string;
@@ -468,6 +608,8 @@ self.onmessage = async (e: MessageEvent) => {
     }
 
     const pagesData: { pageNum: number; text: string; headingTitle?: string }[] = [];
+    const allExtractedImages: EpubImage[] = [];
+    let coverBuffer: ArrayBuffer | undefined;
 
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const currentPercent = Math.round(10 + (pageNum / numPages) * 75);
@@ -486,7 +628,21 @@ self.onmessage = async (e: MessageEvent) => {
       let totalFontSize = 0;
       let fontCount = 0;
 
-      // Try reading embedded text first if not pure OCR mode
+      // 1. If page 1, render cover image using OffscreenCanvas
+      if (pageNum === 1) {
+        try {
+          const coverViewport = page.getViewport({ scale: 1.8 });
+          const coverCanvas = new OffscreenCanvas(coverViewport.width, coverViewport.height);
+          const coverCtx = coverCanvas.getContext("2d")!;
+          await page.render({ canvasContext: coverCtx as any, viewport: coverViewport }).promise;
+          const coverBlob = await coverCanvas.convertToBlob({ type: "image/jpeg", quality: 0.88 });
+          coverBuffer = await coverBlob.arrayBuffer();
+        } catch (coverErr) {
+          console.warn("Failed to generate book cover from page 1:", coverErr);
+        }
+      }
+
+      // 2. Try reading embedded text first if not pure OCR mode
       if (mode !== "ocr") {
         const textContent = await page.getTextContent();
         const items = textContent.items as any[];
@@ -511,6 +667,18 @@ self.onmessage = async (e: MessageEvent) => {
 
           // Extract text with dual-column segmentation and correct reading order
           pageText = extractPageTextWithLayout(items, pageWidth, isRTL);
+        }
+      }
+
+      // 3. Extract embedded illustrations/figures
+      const pageImages = await extractImagesFromPage(page, pageNum);
+      if (pageImages.length > 0) {
+        for (const img of pageImages) {
+          allExtractedImages.push({
+            filename: img.filename,
+            buffer: img.buffer,
+            mimeType: img.mimeType,
+          });
         }
       }
 
@@ -552,7 +720,22 @@ self.onmessage = async (e: MessageEvent) => {
         pageText = data.text;
       }
 
-      const cleanPageText = normalizePersianText(pageText);
+      let cleanPageText = normalizePersianText(pageText);
+
+      // Append extracted images markup to the end of the page content
+      if (pageImages.length > 0) {
+        const imagesMarkup = pageImages
+          .map(
+            (img) =>
+              `<div class="illustration-container"><img src="../images/${img.filename}" alt="${img.altText}" class="reflow-illustration"/></div>`
+          )
+          .join("\n\n");
+
+        cleanPageText = cleanPageText
+          ? `${cleanPageText}\n\n${imagesMarkup}`
+          : imagesMarkup;
+      }
+
       const avgFontSize = fontCount > 0 ? totalFontSize / fontCount : undefined;
 
       // Determine chapter title for this page if it marks a boundary
@@ -638,7 +821,13 @@ self.onmessage = async (e: MessageEvent) => {
       console.warn("Could not load local font:", e);
     }
 
-    const epubBlob = await buildEpubBlob(chapters, { title, author, language: "fa" }, fontBuffer);
+    const epubBlob = await buildEpubBlob(
+      chapters,
+      { title, author, language: "fa" },
+      fontBuffer,
+      coverBuffer,
+      allExtractedImages
+    );
 
     self.postMessage({
       type: "complete",

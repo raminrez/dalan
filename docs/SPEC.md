@@ -58,18 +58,12 @@ This document specifies the ongoing architectural roadmap and tracer-bullet tick
   2. Fallback heuristic detects major headings from font size clustering and Persian chapter phrases.
   3. Generated EPUB displays an interactive navigation hierarchy in Kindle reader sidebar.
 
-### Ticket DLN-008: Dual-Column Reflow & Text Boundary Segmentation
-* **File:** `docs/issues/DLN-008-dual-column-reflow.md`
-* **Status:** Done
-* **Goal:** Prevent sentence interleaving in multi-column PDFs (academic papers, magazines) by segmenting columns before baseline sorting.
-* **Acceptance Criteria:**
-  1. Detect multi-column gutters by analyzing X-coordinate clustering of text items.
-  2. Order text items RTL-column by RTL-column (right column first in Persian/Arabic, left first in English).
+* **[x] DLN-008: Dual-Column Reflow & Text Boundary Segmentation** (`docs/issues/DLN-008-dual-column-reflow.md`)
+  - Detect multi-column gutters by analyzing X-coordinate clustering of text items, and order text items RTL-column by RTL-column.
+* **[x] DLN-009: Embedded Illustration & Image Extraction for Kindle Reflow** (`docs/issues/DLN-009-image-extraction.md`)
+  - High-resolution cover image generated from page 1 canvas render and declared as `properties="cover-image"` and Kindle `<meta name="cover">` in EPUB manifest.
+  - PDF operator list inspection to extract raster images and embed reflowed illustrations into chapter XHTML.
 
-### Ticket DLN-009: Embedded Illustration & Image Extraction for Kindle Reflow
-* **File:** `docs/issues/DLN-009-image-extraction.md`
-* **Status:** Blocked by DLN-008
-* **Goal:** Extract figures, diagrams, and cover images from PDF pages and embed them reflowed into the EPUB package.
-* **Acceptance Criteria:**
-  1. High-resolution cover image generated from page 1 thumbnail and declared as `properties="cover-image"` in EPUB manifest.
-  2. Inline images scaled, compressed (WebP/JPEG), and placed within corresponding `<figure>` elements.
+---
+
+## Detailed Sprint 2 Tickets
