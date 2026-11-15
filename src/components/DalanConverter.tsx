@@ -19,7 +19,7 @@ import {
 type Locale = "fa" | "en";
 type ThemeMode = "relay-dark" | "relay-light";
 
-export const APP_VERSION = "v0.1.0-alpha.1";
+export const APP_VERSION = "v0.1.0-alpha.2";
 export const WASM_CORE_VERSION = "WASM Core v1.2";
 
 interface Translations {
