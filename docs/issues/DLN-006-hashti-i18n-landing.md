@@ -1,7 +1,7 @@
 # Issue DLN-006: Hashti Pure Component UI & Multi-Language / Light-Dark Landing
 
 * **Parent Spec:** `docs/SPEC.md`
-* **Status:** Ready
+* **Status:** Done
 * **Estimated Effort:** 1 Session
 * **Blocks:** DLN-007
 
@@ -29,7 +29,7 @@ Crucially, all components must come directly from `@hashti/react` without ad-hoc
    - Use Hashti CSS tokens (`--hashti-*`) exclusively.
 
 ## Acceptance Criteria
-- [ ] Language switch toggles instantly between Persian (`fa`) and English (`en`), mirroring layout and typography.
-- [ ] Theme switch toggles smoothly between Light and Dark modes.
-- [ ] No unstyled or custom-overridden components; 100% Hashti design system compliance.
-- [ ] Responsive across mobile, tablet, and desktop viewports.
+- [x] Language switch toggles instantly between Persian (`fa`) and English (`en`), mirroring layout and typography.
+- [x] Theme switch toggles smoothly between Light and Dark modes.
+- [x] No unstyled or custom-overridden components; 100% Hashti design system compliance.
+- [x] Responsive across mobile, tablet, and desktop viewports.

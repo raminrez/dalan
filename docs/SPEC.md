@@ -4,7 +4,7 @@ This document specifies the ongoing architectural roadmap and tracer-bullet tick
 
 ---
 
-## Completed Tracer-Bullet Tickets (Sprint 1)
+## Completed Tracer-Bullet Tickets (Sprint 1 & Sprint 2)
 * **[x] DLN-001: PWA Web Manifest & Service Worker** (`docs/issues/DLN-001-pwa-manifest.md`)
   - Standalone PWA manifest, service worker registration, and offline caching strategy.
 * **[x] DLN-002: Offline Tessdata & Font IndexedDB Cache** (`docs/issues/DLN-002-offline-caching.md`)
@@ -15,6 +15,8 @@ This document specifies the ongoing architectural roadmap and tracer-bullet tick
   - Production edge deployment to `dalan.raminrez.dev` via Cloudflare Pages.
 * **[x] DLN-005: Paknevis/Davat Persian Orthography & NFKC Decoding** (`docs/issues/DLN-005-persian-orthography.md`)
   - Unicode NFKC normalization folding presentation forms (`U+FB50..U+FEFF`), ZWNJ (نیم‌فاصله) regex boundaries for prefixes and suffixes, Arabic-to-Persian letter standardization, and punctuation rules.
+* **[x] DLN-006: Hashti Pure Component UI & Multi-Language / Light-Dark Landing** (`docs/issues/DLN-006-hashti-i18n-landing.md`)
+  - Multi-language (Persian RTL / English LTR), dynamic Light/Dark mode (`relay-dark` / `relay-light`), pure `@hashti/react` components with zero token clashes.
 
 ---
 
@@ -39,7 +41,7 @@ This document specifies the ongoing architectural roadmap and tracer-bullet tick
 
 ### Ticket DLN-006: Hashti Pure Component UI & Multi-Language / Light-Dark Landing
 * **File:** `docs/issues/DLN-006-hashti-i18n-landing.md`
-* **Status:** Ready
+* **Status:** Done
 * **Goal:** Deliver a production-grade, architecturally sound landing surface using pure `@hashti/react` primitives without ad-hoc custom styles, supporting Persian (RTL) & English (LTR) and seamless Light/Dark theme switching.
 * **Acceptance Criteria:**
   1. Root application wrapped in Hashti `<Theme theme={theme} locale={locale} direction={dir}>`.
